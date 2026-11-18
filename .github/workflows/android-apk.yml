@@ -28,6 +28,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -35,7 +38,14 @@ jobs:
 
       - name: Run unit tests & build debug APK
         working-directory: android
-        run: gradle testDebugUnitTest assembleDebug --no-daemon
+        run: |
+          set -o pipefail
+          if ! gradle testDebugUnitTest assembleDebug --no-daemon --console=plain 2>&1 | tee /tmp/gradle-build.log; then
+            tail -n 80 /tmp/gradle-build.log | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            exit 1
+          fi
 
       - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
