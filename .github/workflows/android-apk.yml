@@ -17,6 +17,8 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -50,3 +52,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish APK to GitHub Pre-release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk AutoTraderAhh-debug.apk
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release delete android-latest --yes --cleanup-tag
+          fi
+          gh release create android-latest AutoTraderAhh-debug.apk \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "AutoTrader Ahh Android (Latest Debug APK)" \
+            --notes "Direct APK download for Android. Built from commit ${{ github.sha }}."
