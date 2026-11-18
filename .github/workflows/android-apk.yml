@@ -38,9 +38,8 @@ jobs:
         run: |
           set -o pipefail
           if ! gradle testDebugUnitTest assembleDebug --no-daemon --console=plain 2>&1 | tee /tmp/gradle-build.log; then
-            tail -n 80 /tmp/gradle-build.log | while IFS= read -r line; do
-              echo "::error::$line"
-            done
+            err_summary=$(tail -n 35 /tmp/gradle-build.log | tr '\n' ' ' | sed 's/  */ /g')
+            echo "::error::$err_summary"
             exit 1
           fi
 
